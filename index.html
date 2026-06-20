@@ -429,9 +429,9 @@
       </div>
 
       <div class="scan-area">
-        <div class="scan-label">🔢 สแกน หรือ กรอก Barcode สินค้า</div>
+        <div class="scan-label">🔫 ยิง Barcode พัสดุ → เปิดออเดอร์ &nbsp;|&nbsp; ยิง SKU สินค้า → เช็คลิสต์</div>
         <div class="scan-input-row">
-          <input class="scan-input" id="scanInput" type="text" placeholder="สแกน barcode หรือพิมพ์รหัสสินค้า..." autocomplete="off" onkeydown="if(event.key==='Enter') scanItem()">
+          <input class="scan-input" id="scanInput" type="text" placeholder="ยิง Barcode พัสดุเพื่อเปิดออเดอร์ / ยิง SKU สินค้าเพื่อเช็ค..." autocomplete="off" onkeydown="if(event.key==='Enter') scanItem()">
           <button class="scan-btn" onclick="scanItem()">✓ ยืนยัน</button>
         </div>
       </div>
@@ -460,48 +460,109 @@
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────
+// ── Barcode → Order mapping ──────────────────────────────────
+// ยิง barcode พัสดุ → เปิด Order นั้นอัตโนมัติ
+const BARCODE_MAP = {
+  "BS11U33657280": "OB-001",
+  "BS11U33664526": "OB-002",
+  "BS11U33663371": "OB-003",
+  "BS11U33665039": "OB-004",
+  "BS11U33664097": "OB-005",
+  "BS11U33663929": "OB-006",
+  "BS11U33662550": "OB-007",
+  "BS11U33664228": "OB-008",
+  "BS11U33658696": "OB-009",
+  "BS11U33664052": "OB-010",
+};
+
 const ORDERS = [
   {
-    id: "OB-20260001", customer: "บริษัท ก. จำกัด", carrier: "Instant",
-    status: "pending",
+    id: "OB-001", barcode: "BS11U33657280",
+    customer: "ลูกค้า A", carrier: "Instant", status: "pending",
     items: [
-      { sku: "SKU-001", name: "อาหารทะเลแช่แข็ง 1kg", qty: 5, checked: 0 },
-      { sku: "SKU-002", name: "ซอสพริก 300ml", qty: 3, checked: 0 },
-      { sku: "SKU-003", name: "น้ำปลา 700ml", qty: 2, checked: 0 },
+      { sku: "ASTA-001",  name: "Asta",          qty: 2, checked: 0 },
+      { sku: "DAY-001",   name: "Day",            qty: 1, checked: 0 },
+      { sku: "SOS-001",   name: "SOS",            qty: 1, checked: 0 },
     ]
   },
   {
-    id: "OB-20260002", customer: "ร้านอาหาร บ.", carrier: "SHP Food",
-    status: "pending",
+    id: "OB-002", barcode: "BS11U33664526",
+    customer: "ลูกค้า B", carrier: "SHP Food", status: "pending",
     items: [
-      { sku: "SKU-004", name: "น้ำมันพืช 5L", qty: 6, checked: 0 },
-      { sku: "SKU-005", name: "ข้าวสาร 5kg", qty: 4, checked: 0 },
+      { sku: "ACNE-001",  name: "Acne Clear",     qty: 3, checked: 0 },
+      { sku: "POST-001",  name: "Post Acne",      qty: 2, checked: 0 },
     ]
   },
   {
-    id: "OB-20260003", customer: "โรงแรม ง.", carrier: "Walk-in",
-    status: "packing",
+    id: "OB-003", barcode: "BS11U33663371",
+    customer: "ลูกค้า C", carrier: "Instant", status: "pending",
     items: [
-      { sku: "SKU-006", name: "สบู่ก้อน", qty: 24, checked: 12 },
-      { sku: "SKU-007", name: "แชมพู 300ml", qty: 12, checked: 12 },
-      { sku: "SKU-008", name: "ครีมนวดผม 300ml", qty: 12, checked: 0 },
+      { sku: "FEMI-001",  name: "FemiProbiotics", qty: 1, checked: 0 },
+      { sku: "PEP-001",   name: "Peptide",        qty: 2, checked: 0 },
+      { sku: "ASTA-001",  name: "Asta",           qty: 1, checked: 0 },
     ]
   },
   {
-    id: "OB-20260004", customer: "ร้านค้า จ.", carrier: "Instant",
-    status: "done",
+    id: "OB-004", barcode: "BS11U33665039",
+    customer: "ลูกค้า D", carrier: "Walk-in", status: "pending",
     items: [
-      { sku: "SKU-009", name: "มาม่า (ลัง)", qty: 2, checked: 2 },
-      { sku: "SKU-010", name: "น้ำดื่ม 6L × 6", qty: 3, checked: 3 },
+      { sku: "DAY-001",   name: "Day",            qty: 2, checked: 0 },
+      { sku: "SOS-001",   name: "SOS",            qty: 1, checked: 0 },
+      { sku: "ACNE-001",  name: "Acne Clear",     qty: 1, checked: 0 },
     ]
   },
   {
-    id: "OB-20260005", customer: "ห้าง ค.", carrier: "SHP Food",
-    status: "pending",
+    id: "OB-005", barcode: "BS11U33664097",
+    customer: "ลูกค้า E", carrier: "Instant", status: "pending",
     items: [
-      { sku: "SKU-011", name: "กาแฟ 3 in 1 (ลัง)", qty: 5, checked: 0 },
-      { sku: "SKU-012", name: "ชาเขียว 24 ขวด", qty: 2, checked: 0 },
-      { sku: "SKU-013", name: "โอเลี้ยง 24 กระป๋อง", qty: 3, checked: 0 },
+      { sku: "PEP-001",   name: "Peptide",        qty: 3, checked: 0 },
+      { sku: "POST-001",  name: "Post Acne",      qty: 1, checked: 0 },
+    ]
+  },
+  {
+    id: "OB-006", barcode: "BS11U33663929",
+    customer: "ลูกค้า F", carrier: "SHP Food", status: "pending",
+    items: [
+      { sku: "ASTA-001",  name: "Asta",           qty: 1, checked: 0 },
+      { sku: "FEMI-001",  name: "FemiProbiotics", qty: 2, checked: 0 },
+      { sku: "DAY-001",   name: "Day",            qty: 1, checked: 0 },
+      { sku: "SOS-001",   name: "SOS",            qty: 1, checked: 0 },
+    ]
+  },
+  {
+    id: "OB-007", barcode: "BS11U33662550",
+    customer: "ลูกค้า G", carrier: "Instant", status: "pending",
+    items: [
+      { sku: "ACNE-001",  name: "Acne Clear",     qty: 2, checked: 0 },
+      { sku: "PEP-001",   name: "Peptide",        qty: 1, checked: 0 },
+    ]
+  },
+  {
+    id: "OB-008", barcode: "BS11U33664228",
+    customer: "ลูกค้า H", carrier: "SHP Food", status: "pending",
+    items: [
+      { sku: "POST-001",  name: "Post Acne",      qty: 3, checked: 0 },
+      { sku: "ASTA-001",  name: "Asta",           qty: 2, checked: 0 },
+      { sku: "FEMI-001",  name: "FemiProbiotics", qty: 1, checked: 0 },
+    ]
+  },
+  {
+    id: "OB-009", barcode: "BS11U33658696",
+    customer: "ลูกค้า I", carrier: "Instant", status: "pending",
+    items: [
+      { sku: "DAY-001",   name: "Day",            qty: 1, checked: 0 },
+      { sku: "SOS-001",   name: "SOS",            qty: 2, checked: 0 },
+      { sku: "PEP-001",   name: "Peptide",        qty: 1, checked: 0 },
+    ]
+  },
+  {
+    id: "OB-010", barcode: "BS11U33664052",
+    customer: "ลูกค้า J", carrier: "Walk-in", status: "pending",
+    items: [
+      { sku: "ACNE-001",  name: "Acne Clear",     qty: 1, checked: 0 },
+      { sku: "POST-001",  name: "Post Acne",      qty: 1, checked: 0 },
+      { sku: "FEMI-001",  name: "FemiProbiotics", qty: 1, checked: 0 },
+      { sku: "ASTA-001",  name: "Asta",           qty: 1, checked: 0 },
     ]
   },
 ];
@@ -653,19 +714,46 @@ function renderFooter(order) {
 // ── SCAN ──────────────────────────────────────────────────────
 function scanItem() {
   const input = document.getElementById("scanInput");
-  const val = input.value.trim().toUpperCase();
+  const val = input.value.trim();
   if (!val) return;
 
-  const order = ORDERS.find(o => o.id === currentOrderId);
-  if (!order || order.status === "done") return;
+  const valUpper = val.toUpperCase();
 
-  const item = order.items.find(i => i.sku.toUpperCase() === val || i.name.toUpperCase().includes(val));
+  // ── ยิง Barcode พัสดุ → เปิด Order อัตโนมัติ ──
+  if (BARCODE_MAP[val] || BARCODE_MAP[valUpper]) {
+    const orderId = BARCODE_MAP[val] || BARCODE_MAP[valUpper];
+    const order = ORDERS.find(o => o.id === orderId);
+    if (order) {
+      input.value = "";
+      input.focus();
+      openOrder(orderId);
+      showToast(`📦 เปิดออเดอร์ ${orderId} — ${order.customer}`, "info");
+      return;
+    }
+  }
+
+  // ── ยิง SKU สินค้าใน Order ที่เปิดอยู่ ──
+  const order = ORDERS.find(o => o.id === currentOrderId);
+  if (!order) {
+    showToast("ยิง Barcode พัสดุก่อนเพื่อเปิดออเดอร์", "error");
+    input.value = "";
+    return;
+  }
+  if (order.status === "done") {
+    showToast("ออเดอร์นี้แพ็คเสร็จแล้ว", "info");
+    input.value = "";
+    return;
+  }
+
+  const item = order.items.find(i =>
+    i.sku.toUpperCase() === valUpper ||
+    i.name.toUpperCase().includes(valUpper)
+  );
 
   if (!item) {
     showToast("ไม่พบสินค้า: " + val, "error");
-    const row = document.getElementById("scanInput");
-    row.style.borderColor = "var(--danger)";
-    setTimeout(() => row.style.borderColor = "var(--accent)", 600);
+    input.style.borderColor = "var(--danger)";
+    setTimeout(() => input.style.borderColor = "var(--accent)", 600);
   } else if (item.checked >= item.qty) {
     showToast(`${item.name} — ครบแล้ว (${item.qty} ชิ้น)`, "info");
   } else {
